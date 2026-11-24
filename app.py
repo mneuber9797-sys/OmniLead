@@ -15,192 +15,7 @@ from docx import Document
 st.set_page_config(page_title="OmniLead | Akquise-Evaluation", layout="wide")
 
 # ==============================================================================
-# 1. DATENBANK-VERBINDUNG & TABELLEN-INITIALISIERUNG
-# ==============================================================================
-def get_db_url():
-    try:
-        u = st.secrets["DATABASE_URL"].strip()
-    except Exception:
-        u = os.environ.get("DATABASE_URL", "").strip()
-    return u.replace("postgres://", "postgresql://", 1) if u.startswith("postgres://") else u
-
-@st.cache_resource
-def get_db_pool():
-    u = get_db_url()
-    if not u:
-        raise RuntimeError("DATABASE_URL fehlt in den Streamlit Secrets.")
-    return pool.ThreadedConnectionPool(minconn=1, maxconn=6, dsn=u, connect_timeout=15)
-
-def get_conn():
-    p, err = get_db_pool(), None
-    for _ in range(3):
-        c = None
-        try:
-            c = p.getconn()
-            with c.cursor() as cur:
-                cur.execute("SELECT 1;")
-            return c
-        except Exception as e:
-            err = e
-            if c:
-                try:
-                    p.putconn(c, close=True)
-                except Exception:
-                    pass
-            time.sleep(0.4)
-    raise err
-
-def put_conn(c, broken=False):
-    if c:
-        try:
-            get_db_pool().putconn(c, close=broken)
-        except Exception:
-            try:
-                c.close()
-            except Exception:
-                pass
-
-@st.cache_resource
-def init_db():
-    c, brk = get_conn(), False
-    try:
-        with c.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS acq_approaches (
-                    id SERIAL PRIMARY KEY,
-                    name TEXT NOT NULL UNIQUE,
-                    guide_text TEXT,
-                    goal_1 TEXT,
-                    goal_2 TEXT,
-                    goal_3 TEXT,
-                    category TEXT,
-                    created_at TIMESTAMPTZ DEFAULT NOW()
-                );
-            """)
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS acq_interactions (
-                    id SERIAL PRIMARY KEY,
-                    approach_id INTEGER REFERENCES acq_approaches(id) ON DELETE CASCADE,
-                    contact_type TEXT,
-                    outcome TEXT,
-                    failure_reasons JSONB,
-                    objections JSONB,
-                    performance INTEGER,
-                    created_at TIMESTAMPTZ DEFAULT NOW()
-                );
-            """)
-        c.commit()
-    except Exception:
-        brk = True
-        raise
-    finally:
-        put_conn(c, brk)
-    return True
-
-try:
-    init_db()
-except Exception as e:
-    st.error(f"Datenbank-Fehler: {e}")
-    st.stop()
-
-# ==============================================================================
-# 2. DATENBANK-OPERATIONEN
-# ==============================================================================
-def lade_ansaetze():
-    c, brk = get_conn(), False
-    try:
-        with c.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT * FROM acq_approaches ORDER BY created_at ASC;")
-            return [dict(r) for r in cur.fetchall()]
-    except Exception:
-        brk = True
-        raise
-    finally:
-        put_conn(c, brk)
-
-def lade_interaktionen(approach_id=None):
-    c, brk = get_conn(), False
-    try:
-        with c.cursor(cursor_factory=RealDictCursor) as cur:
-            if approach_id:
-                cur.execute("SELECT * FROM acq_interactions WHERE approach_id = %s ORDER BY created_at ASC;", (approach_id,))
-            else:
-                cur.execute("SELECT * FROM acq_interactions ORDER BY created_at ASC;")
-            return [dict(r) for r in cur.fetchall()]
-    except Exception:
-        brk = True
-        raise
-    finally:
-        put_conn(c, brk)
-
-def speichere_ansatz(name, guide, g1, g2, g3, category):
-    c, brk = get_conn(), False
-    try:
-        with c.cursor() as cur:
-            cur.execute("""
-                INSERT INTO acq_approaches (name, guide_text, goal_1, goal_2, goal_3, category)
-                VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (name) DO NOTHING RETURNING id;
-            """, (name.strip(), guide, g1, g2, g3, category))
-            res = cur.fetchone()
-        c.commit()
-        return res is not None
-    except Exception:
-        brk = True
-        raise
-    finally:
-        put_conn(c, brk)
-
-def speichere_interaktion(app_id, contact, outcome, reasons, objections, perf):
-    c, brk = get_conn(), False
-    try:
-        with c.cursor() as cur:
-            cur.execute("""
-                INSERT INTO acq_interactions (approach_id, contact_type, outcome, failure_reasons, objections, performance)
-                VALUES (%s, %s, %s, %s, %s, %s);
-            """, (app_id, contact, outcome, json.dumps(reasons), json.dumps(objections), perf))
-        c.commit()
-    except Exception:
-        brk = True
-        raise
-    finally:
-        put_conn(c, brk)
-
-def loesche_ansatz(app_id):
-    c, brk = get_conn(), False
-    try:
-        with c.cursor() as cur:
-            cur.execute("DELETE FROM acq_approaches WHERE id = %s;", (app_id,))
-        c.commit()
-    except Exception:
-        brk = True
-        raise
-    finally:
-        put_conn(c, brk)
-
-def extrahiere_leitfaden(uploaded_file):
-    if not uploaded_file:
-        return ""
-    name = uploaded_file.name.lower()
-    raw = uploaded_file.read()
-    if name.endswith(".pdf"):
-        reader = PdfReader(io.BytesIO(raw))
-        return "\n".join(p.extract_text() or "" for p in reader.pages).strip()
-    if name.endswith(".docx"):
-        doc = Document(io.BytesIO(raw))
-        parts = [p.text for p in doc.paragraphs if p.text.strip()]
-        for tb in doc.tables:
-            for r in tb.rows:
-                parts.append(" | ".join(c.text.strip() for c in r.cells))
-        return "\n".join(parts).strip()
-    for enc in ("utf-8", "latin-1"):
-        try:
-            return raw.decode(enc).strip()
-        except Exception:
-            pass
-    return ""
-
-# ==============================================================================
-# 3. DESIGN & CSS (OmniLead Dark & Plastisch)
+# 1. DESIGN & CSS (OmniLead Dark & Plastisch)
 # ==============================================================================
 st.markdown("""
 <style>
@@ -372,6 +187,220 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ==============================================================================
+# 2. PASSWORT-SCHUTZ
+# ==============================================================================
+def check_password():
+    try:
+        pw = st.secrets["APP_PASSWORD"]
+    except Exception:
+        pw = "OmniLex"
+
+    if not st.session_state.get("eingeloggt"):
+        st.markdown("""
+        <div class="omni-header">
+            <div class="omni-brand">OmniLead</div>
+            <div class="omni-sub">Erfolgsevaluation & Akquise-Analyse</div>
+        </div>
+        """, unsafe_allow_html=True)
+        c1, _ = st.columns([1.2, 1])
+        with c1:
+            inp = st.text_input("Zugangspasswort:", type="password", placeholder="Passwort eingeben...")
+            if st.button("Entsperren", use_container_width=True):
+                if inp == pw:
+                    st.session_state.eingeloggt = True
+                    st.rerun()
+                else:
+                    st.error("Falsches Passwort.")
+        st.stop()
+
+check_password()
+
+# ==============================================================================
+# 3. DATENBANK-VERBINDUNG & TABELLEN-INITIALISIERUNG
+# ==============================================================================
+def get_db_url():
+    try:
+        u = st.secrets["DATABASE_URL"].strip()
+    except Exception:
+        u = os.environ.get("DATABASE_URL", "").strip()
+    return u.replace("postgres://", "postgresql://", 1) if u.startswith("postgres://") else u
+
+@st.cache_resource
+def get_db_pool():
+    u = get_db_url()
+    if not u:
+        raise RuntimeError("DATABASE_URL fehlt in den Streamlit Secrets.")
+    return pool.ThreadedConnectionPool(minconn=1, maxconn=6, dsn=u, connect_timeout=15)
+
+def get_conn():
+    p, err = get_db_pool(), None
+    for _ in range(3):
+        c = None
+        try:
+            c = p.getconn()
+            with c.cursor() as cur:
+                cur.execute("SELECT 1;")
+            return c
+        except Exception as e:
+            err = e
+            if c:
+                try:
+                    p.putconn(c, close=True)
+                except Exception:
+                    pass
+            time.sleep(0.4)
+    raise err
+
+def put_conn(c, broken=False):
+    if c:
+        try:
+            get_db_pool().putconn(c, close=broken)
+        except Exception:
+            try:
+                c.close()
+            except Exception:
+                pass
+
+@st.cache_resource
+def init_db():
+    c, brk = get_conn(), False
+    try:
+        with c.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS acq_approaches (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL UNIQUE,
+                    guide_text TEXT,
+                    goal_1 TEXT,
+                    goal_2 TEXT,
+                    goal_3 TEXT,
+                    category TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS acq_interactions (
+                    id SERIAL PRIMARY KEY,
+                    approach_id INTEGER REFERENCES acq_approaches(id) ON DELETE CASCADE,
+                    contact_type TEXT,
+                    outcome TEXT,
+                    failure_reasons JSONB,
+                    objections JSONB,
+                    performance INTEGER,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
+            """)
+        c.commit()
+    except Exception:
+        brk = True
+        raise
+    finally:
+        put_conn(c, brk)
+    return True
+
+try:
+    init_db()
+except Exception as e:
+    st.error(f"Datenbank-Fehler: {e}")
+    st.stop()
+
+# ==============================================================================
+# 4. DATENBANK-OPERATIONEN
+# ==============================================================================
+def lade_ansaetze():
+    c, brk = get_conn(), False
+    try:
+        with c.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT * FROM acq_approaches ORDER BY created_at ASC;")
+            return [dict(r) for r in cur.fetchall()]
+    except Exception:
+        brk = True
+        raise
+    finally:
+        put_conn(c, brk)
+
+def lade_interaktionen(approach_id=None):
+    c, brk = get_conn(), False
+    try:
+        with c.cursor(cursor_factory=RealDictCursor) as cur:
+            if approach_id:
+                cur.execute("SELECT * FROM acq_interactions WHERE approach_id = %s ORDER BY created_at ASC;", (approach_id,))
+            else:
+                cur.execute("SELECT * FROM acq_interactions ORDER BY created_at ASC;")
+            return [dict(r) for r in cur.fetchall()]
+    except Exception:
+        brk = True
+        raise
+    finally:
+        put_conn(c, brk)
+
+def speichere_ansatz(name, guide, g1, g2, g3, category):
+    c, brk = get_conn(), False
+    try:
+        with c.cursor() as cur:
+            cur.execute("""
+                INSERT INTO acq_approaches (name, guide_text, goal_1, goal_2, goal_3, category)
+                VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (name) DO NOTHING RETURNING id;
+            """, (name.strip(), guide, g1, g2, g3, category))
+            res = cur.fetchone()
+        c.commit()
+        return res is not None
+    except Exception:
+        brk = True
+        raise
+    finally:
+        put_conn(c, brk)
+
+def speichere_interaktion(app_id, contact, outcome, reasons, objections, perf):
+    c, brk = get_conn(), False
+    try:
+        with c.cursor() as cur:
+            cur.execute("""
+                INSERT INTO acq_interactions (approach_id, contact_type, outcome, failure_reasons, objections, performance)
+                VALUES (%s, %s, %s, %s, %s, %s);
+            """, (app_id, contact, outcome, json.dumps(reasons), json.dumps(objections), perf))
+        c.commit()
+    except Exception:
+        brk = True
+        raise
+    finally:
+        put_conn(c, brk)
+
+def loesche_ansatz(app_id):
+    c, brk = get_conn(), False
+    try:
+        with c.cursor() as cur:
+            cur.execute("DELETE FROM acq_approaches WHERE id = %s;", (app_id,))
+        c.commit()
+    except Exception:
+        brk = True
+        raise
+    finally:
+        put_conn(c, brk)
+
+def extrahiere_leitfaden(uploaded_file):
+    if not uploaded_file:
+        return ""
+    name = uploaded_file.name.lower()
+    raw = uploaded_file.read()
+    if name.endswith(".pdf"):
+        reader = PdfReader(io.BytesIO(raw))
+        return "\n".join(p.extract_text() or "" for p in reader.pages).strip()
+    if name.endswith(".docx"):
+        doc = Document(io.BytesIO(raw))
+        parts = [p.text for p in doc.paragraphs if p.text.strip()]
+        for tb in doc.tables:
+            for r in tb.rows:
+                parts.append(" | ".join(c.text.strip() for c in r.cells))
+        return "\n".join(parts).strip()
+    for enc in ("utf-8", "latin-1"):
+        try:
+            return raw.decode(enc).strip()
+        except Exception:
+            pass
+    return ""
+
 st.markdown("""
 <div class="omni-header">
     <div class="omni-brand">OmniLead</div>
@@ -380,7 +409,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 4. FESTE AUSWAHLLISTEN & KATEGORIEN
+# 5. FESTE AUSWAHLLISTEN & KATEGORIEN
 # ==============================================================================
 REASONS_LIST = [
     "Begrüßung die Fragen offen ließ",
