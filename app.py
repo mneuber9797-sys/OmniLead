@@ -1,5 +1,6 @@
 import os
 import io
+import html
 import json
 import time
 import pandas as pd
@@ -24,7 +25,7 @@ st.markdown("""
         color: #F1F5F9;
     }
     .block-container {
-        max-width: 1240px !important;
+        max-width: 1260px !important;
         padding-top: 3.6rem !important;
         padding-bottom: 3.4rem !important;
         padding-left: 2.4rem !important;
@@ -33,60 +34,32 @@ st.markdown("""
     hr {
         border: none !important;
         border-top: 1px solid rgba(125,211,252,.22) !important;
-        margin: 1.35rem 0 !important;
+        margin: 1.25rem 0 !important;
     }
 
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 0.75rem;
-        background: #0A0F1A;
-        padding: 0.45rem;
-        border-radius: 14px;
-        border: 1px solid rgba(125,211,252,.22);
-        box-shadow: inset 0 2px 6px rgba(0,0,0,.55);
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px !important;
-        padding: 0.62rem 1.35rem !important;
-        font-weight: 600 !important;
-        font-size: 0.96rem !important;
-        color: #94A3B8 !important;
-        border: none !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(160deg, #162238, #0F172A) !important;
-        color: #E0F2FE !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,.4), inset 0 1px 0 rgba(125,211,252,.35) !important;
-    }
-
-    /* Header */
-    .omni-header {
-        padding-bottom: 0.85rem;
-        margin-bottom: 1.15rem;
-        border-bottom: 1.5px solid rgba(125, 211, 252, 0.4);
-    }
+    /* Marken-Logo */
     .omni-brand {
-        font-size: 2.3rem;
+        font-size: 2.45rem;
         font-weight: 800;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em;
         background: linear-gradient(135deg, #FFFFFF 0%, #E0F2FE 55%, #7DD3FC 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        line-height: 1.15;
+        line-height: 1.1;
     }
     .omni-sub {
         color: #94A3B8;
-        font-size: 0.88rem;
-        margin-top: 0.22rem;
+        font-size: 0.85rem;
+        margin-top: 0.2rem;
     }
 
-    /* Sculpt Panel (Masken) */
-    .sculpt-panel {
-        background: linear-gradient(165deg, #11192B, #0A0F1A);
-        border: 1px solid rgba(125,211,252,.26);
-        border-radius: 16px;
-        padding: 1.65rem 1.8rem;
-        box-shadow: 0 14px 30px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.09);
+    /* Native Container als plastische Maske (ohne leere HTML-Balken) */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: linear-gradient(165deg, #11192B 0%, #0A0F1A 100%) !important;
+        border: 1px solid rgba(125, 211, 252, 0.26) !important;
+        border-radius: 16px !important;
+        padding: 1.35rem 1.55rem !important;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     }
 
     /* Große wortlose Kennzahlen rechts neben der Maske */
@@ -95,16 +68,16 @@ st.markdown("""
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 470px;
-        gap: 3.1rem;
-        background: linear-gradient(165deg, #0E1525, #080C15);
-        border: 1px solid rgba(125,211,252,.2);
+        min-height: 455px;
+        gap: 3rem;
+        background: linear-gradient(165deg, #0E1525 0%, #080C15 100%);
+        border: 1px solid rgba(125,211,252,.24);
         border-radius: 18px;
         padding: 2rem 1.2rem;
         box-shadow: 0 14px 30px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.06);
     }
     .huge-val {
-        font-size: 5.4rem;
+        font-size: 5.3rem;
         font-weight: 900;
         line-height: 1;
         letter-spacing: -0.03em;
@@ -120,14 +93,14 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
     }
     .val-stars {
-        font-size: 3.1rem;
+        font-size: 3rem;
         letter-spacing: 0.14em;
         color: #FFFFFF;
         text-shadow: 0 0 18px rgba(255,255,255,0.45);
         line-height: 1;
     }
 
-    /* Kategorie-Karten (Eis, Wald, Feuer, Luft) */
+    /* Kategorie-Spalten & Ansatz-Karten (Eis, Wald, Feuer, Luft) */
     .cat-header {
         font-size: 1.15rem;
         font-weight: 800;
@@ -144,8 +117,8 @@ st.markdown("""
 
     .cat-card {
         border-radius: 14px;
-        padding: 1.1rem 1.2rem;
-        margin-bottom: 0.45rem;
+        padding: 1.05rem 1.15rem;
+        margin-bottom: 0.42rem;
         box-shadow: 0 8px 20px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.14);
         border: 1.5px solid rgba(255,255,255,0.15);
     }
@@ -154,8 +127,28 @@ st.markdown("""
     .cat-Feuer { background: linear-gradient(145deg, #7F1D1D, #991B1B); border-color: #F87171; color: #FEF2F2; }
     .cat-Luft { background: linear-gradient(145deg, #E2E8F0, #CBD5E1); border-color: #FFFFFF; color: #0F172A; }
 
-    .cat-title { font-size: 1.08rem; font-weight: 800; margin-bottom: 0.25rem; }
-    .cat-rate { font-size: 1.75rem; font-weight: 900; line-height: 1.1; }
+    .cat-title { font-size: 1.06rem; font-weight: 800; margin-bottom: 0.22rem; }
+    .cat-rate { font-size: 1.7rem; font-weight: 900; line-height: 1.1; }
+
+    /* Aktienkurs-Statusleiste */
+    .ticker-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        background: #0A0F1A;
+        border: 1px solid rgba(125,211,252,.22);
+        border-radius: 12px;
+        padding: 0.65rem 1.1rem;
+        margin-bottom: 0.6rem;
+    }
+    .ticker-pill {
+        font-size: 0.88rem;
+        font-weight: 700;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+    }
 
     /* Horizontale Radio-Buttons */
     div[data-testid="stRadio"] > div[role="radiogroup"] { gap: 0.7rem; }
@@ -170,19 +163,33 @@ st.markdown("""
         border-color: #7DD3FC !important;
     }
 
-    /* Buttons */
+    /* Standard & Primäre Buttons (inkl. größere Layer-Navigation oben) */
     .stButton > button {
-        background: linear-gradient(180deg, #152036 0%, #0D1424 100%) !important;
-        border: 1px solid rgba(125, 211, 252, 0.42) !important;
-        color: #E0F2FE !important;
-        border-radius: 11px !important;
+        background: linear-gradient(180deg, #131D31 0%, #0B111F 100%) !important;
+        border: 1px solid rgba(125, 211, 252, 0.34) !important;
+        color: #CBD5E1 !important;
+        border-radius: 12px !important;
         font-weight: 600 !important;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        font-size: 1.02rem !important;
+        padding: 0.66rem 1.05rem !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        transition: all 0.14s ease !important;
     }
     .stButton > button:hover {
         border-color: #7DD3FC !important;
         background: linear-gradient(180deg, #1B2A47 0%, #111B30 100%) !important;
         color: #FFFFFF !important;
+    }
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
+        border: 1px solid #BAE6FD !important;
+        color: #060911 !important;
+        font-weight: 800 !important;
+        box-shadow: 0 6px 20px rgba(56, 189, 248, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #0EA5E9 0%, #7DD3FC 100%) !important;
+        color: #060911 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -197,16 +204,11 @@ def check_password():
         pw = "OmniLex"
 
     if not st.session_state.get("eingeloggt"):
-        st.markdown("""
-        <div class="omni-header">
-            <div class="omni-brand">OmniLead</div>
-            <div class="omni-sub">Erfolgsevaluation & Akquise-Analyse</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="omni-brand">OmniLead</div><div class="omni-sub">Erfolgsevaluation & Akquise-Analyse</div><hr>', unsafe_allow_html=True)
         c1, _ = st.columns([1.2, 1])
         with c1:
             inp = st.text_input("Zugangspasswort:", type="password", placeholder="Passwort eingeben...")
-            if st.button("Entsperren", use_container_width=True):
+            if st.button("Entsperren", use_container_width=True, type="primary"):
                 if inp == pw:
                     st.session_state.eingeloggt = True
                     st.rerun()
@@ -401,15 +403,41 @@ def extrahiere_leitfaden(uploaded_file):
             pass
     return ""
 
-st.markdown("""
-<div class="omni-header">
-    <div class="omni-brand">OmniLead</div>
-    <div class="omni-sub">Erfolgsevaluation & Akquise-Analyse</div>
-</div>
-""", unsafe_allow_html=True)
+# ==============================================================================
+# 5. KOPFZEILE MIT LAYER-NAVIGATION NEBEN OMNILEAD
+# ==============================================================================
+if "active_layer" not in st.session_state:
+    st.session_state.active_layer = "Erhebung"
+if "last_ansatz" not in st.session_state:
+    st.session_state.last_ansatz = None
+if "view_approach_id" not in st.session_state:
+    st.session_state.view_approach_id = None
+if "view_submode" not in st.session_state:
+    st.session_state.view_submode = "stats"
+
+layers = ["Erhebung", "Ansatz erstellen", "Ansatzübersicht", "Gesamtstatistik"]
+col_logo, col_nav1, col_nav2, col_nav3, col_nav4 = st.columns([1.55, 1.05, 1.25, 1.25, 1.25], gap="small")
+
+with col_logo:
+    st.markdown('<div class="omni-brand">OmniLead</div><div class="omni-sub">Akquise-Evaluation</div>', unsafe_allow_html=True)
+
+for nav_col, layer_name in zip([col_nav1, col_nav2, col_nav3, col_nav4], layers):
+    with nav_col:
+        st.markdown('<div style="height:0.35rem"></div>', unsafe_allow_html=True)
+        is_active = (st.session_state.active_layer == layer_name)
+        if st.button(
+            layer_name,
+            key=f"nav_{layer_name}",
+            type="primary" if is_active else "secondary",
+            use_container_width=True,
+        ):
+            st.session_state.active_layer = layer_name
+            st.rerun()
+
+st.markdown("<hr style='margin-top:0.75rem;margin-bottom:1.25rem;'>", unsafe_allow_html=True)
 
 # ==============================================================================
-# 5. FESTE AUSWAHLLISTEN & KATEGORIEN
+# 6. FESTE AUSWAHLLISTEN & KATEGORIEN
 # ==============================================================================
 REASONS_LIST = [
     "Begrüßung die Fragen offen ließ",
@@ -448,61 +476,228 @@ CATEGORIES = {
     "Luft": "Weiß",
 }
 
-if "last_ansatz" not in st.session_state:
-    st.session_state.last_ansatz = None
-if "view_approach_id" not in st.session_state:
-    st.session_state.view_approach_id = None
-
 alle_ansaetze = lade_ansaetze()
 alle_interaktionen = lade_interaktionen()
 
-tab1, tab2, tab3, tab4 = st.tabs(["Erhebung", "Ansatz erstellen", "Ansatzübersicht", "Gesamtstatistik"])
+# ==============================================================================
+# STATISTIK-AUFBEREITUNG (AKTIENKURS-LINIE & HORIZONTALE BALKEN)
+# ==============================================================================
+def bestimme_kurs_farbe(erfolge: int, misserfolge: int, gesamt: int) -> tuple[str, str, str]:
+    sr = (erfolge / gesamt * 100.0) if gesamt > 0 else 0.0
+    if misserfolge > erfolge:
+        return "#EF4444", "rgba(239, 68, 68, 0.14)", f"Abwärtstrend · Misserfolge überwiegen ({sr:.1f} % Erfolg)"
+    if sr <= 5.0:
+        return "#FACC15", "rgba(250, 204, 21, 0.14)", f"Neutral / Anlaufphase · {sr:.1f} % Erfolgsquote (≤ 5 %)"
+    return "#22C55E", "rgba(34, 197, 94, 0.14)", f"Aufwärtstrend · {sr:.1f} % Erfolgsquote (> 5 %)"
+
+def render_stats(interactions_list, title_prefix=""):
+    if not interactions_list:
+        st.info("Für diese Auswahl wurden noch keine Interaktionen erfasst.")
+        return
+
+    df = pd.DataFrame(interactions_list).sort_values("created_at")
+
+    xs = [0]
+    ys = [0]
+    hover_texts = ["Startpunkt (0 Anwendungsfälle · Kurs: 0)"]
+    seg_colors = []
+    cum_e = 0
+    cum_b = 0
+    cum_m = 0
+    cur_val = 0
+
+    for idx, row in enumerate(df.itertuples(), start=1):
+        out = row.outcome
+        if out == "Erfolg":
+            cum_e += 1
+            cur_val += 1
+        elif out == "Misserfolg":
+            cum_m += 1
+            cur_val -= 1
+        else:
+            cum_b += 1
+
+        sr_step = (cum_e / idx) * 100.0
+        col_hex, _, _ = bestimme_kurs_farbe(cum_e, cum_m, idx)
+        xs.append(idx)
+        ys.append(cur_val)
+        seg_colors.append(col_hex)
+        hover_texts.append(
+            f"Anwendungsfall #{idx} ({out})<br>"
+            f"Kursstand: {cur_val:+d}<br>"
+            f"Erfolgsquote: {sr_step:.1f} %<br>"
+            f"Erfolge: {cum_e} | Plan B: {cum_b} | Misserfolge: {cum_m}"
+        )
+
+    final_col, final_fill, status_label = bestimme_kurs_farbe(cum_e, cum_m, len(df))
+
+    st.markdown(
+        f'<div class="ticker-bar">'
+        f'<div style="font-weight:700;color:#F8FAFC;">📈 {html.escape(title_prefix)}Aktienkurs-Verlauf</div>'
+        f'<div class="ticker-pill" style="background:{final_fill};border:1px solid {final_col};color:{final_col};">'
+        f'Kurs: {cur_val:+d} · {html.escape(status_label)}'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    fig_line = go.Figure()
+
+    # Nulllinie (Referenzlinie wie beim Börsenkurs)
+    fig_line.add_hline(
+        y=0,
+        line_dash="dash",
+        line_color="rgba(148, 163, 184, 0.45)",
+        line_width=1.5,
+    )
+
+    # Dezente Flächenfüllung in der aktuellen Gesamtfarbe
+    fig_line.add_trace(go.Scatter(
+        x=xs,
+        y=ys,
+        mode="none",
+        fill="tozeroy",
+        fillcolor=final_fill,
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+
+    # Segmentweise eingefärbte Kurslinie (Rot / Gelb / Grün je nach Kursstand)
+    for i in range(len(seg_colors)):
+        fig_line.add_trace(go.Scatter(
+            x=[xs[i], xs[i + 1]],
+            y=[ys[i], ys[i + 1]],
+            mode="lines",
+            line=dict(color=seg_colors[i], width=3.5),
+            showlegend=False,
+            hoverinfo="skip",
+        ))
+
+    # Punkte & Hover-Informationen über der gesamten Linie
+    point_colors = ["#94A3B8"] + seg_colors
+    fig_line.add_trace(go.Scatter(
+        x=xs,
+        y=ys,
+        mode="markers",
+        marker=dict(size=7, color=point_colors, line=dict(width=1.2, color="#07090E")),
+        text=hover_texts,
+        hovertemplate="%{text}<extra></extra>",
+        showlegend=False,
+    ))
+
+    fig_line.update_layout(
+        template="plotly_dark",
+        plot_bgcolor="rgba(10,15,26,0.7)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis_title="Anwendungsfälle (Anzahl)",
+        yaxis_title="Kursverlauf (+ Erfolg / − Misserfolg)",
+        xaxis=dict(dtick=1 if len(df) <= 25 else None, gridcolor="rgba(148,163,184,0.1)"),
+        yaxis=dict(dtick=1 if (max(ys) - min(ys)) <= 16 else None, gridcolor="rgba(148,163,184,0.1)"),
+        margin=dict(l=20, r=20, t=24, b=20),
+        height=360,
+    )
+    st.plotly_chart(fig_line, use_container_width=True)
+
+    # Horizontale Balkendiagramme (von links nach rechts)
+    def plot_horizontal_bars(col_name, chart_title):
+        records = []
+        for _, row in df.iterrows():
+            items = row[col_name]
+            if isinstance(items, str):
+                try:
+                    items = json.loads(items)
+                except Exception:
+                    items = []
+            if not isinstance(items, list):
+                items = []
+            for item in items:
+                records.append({"Ansprechpartner": row["contact_type"], "Kriterium": item})
+
+        if not records:
+            st.caption(f"Noch keine Einträge für: {chart_title}")
+            return
+
+        df_exp = pd.DataFrame(records)
+        df_grp = df_exp.groupby(["Kriterium", "Ansprechpartner"]).size().reset_index(name="Häufigkeit")
+        order_totals = df_grp.groupby("Kriterium")["Häufigkeit"].sum().sort_values(ascending=False).index.tolist()
+
+        fig = px.bar(
+            df_grp,
+            x="Häufigkeit",
+            y="Kriterium",
+            color="Ansprechpartner",
+            orientation="h",
+            barmode="group",
+            text="Häufigkeit",
+            category_orders={"Kriterium": order_totals},
+            color_discrete_map={
+                "Geschäftsführer": "#38BDF8",
+                "Führungskraft": "#4ADE80",
+                "Empfang": "#FACC15",
+            },
+        )
+        fig.update_traces(textposition="outside")
+        chart_height = max(320, len(order_totals) * 46 + 110)
+        fig.update_layout(
+            title=chart_title,
+            template="plotly_dark",
+            plot_bgcolor="rgba(10,15,26,0.7)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            xaxis_title="Häufigkeit",
+            yaxis_title="",
+            xaxis=dict(dtick=1, gridcolor="rgba(148,163,184,0.1)"),
+            height=chart_height,
+            margin=dict(l=10, r=25, t=48, b=20),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    c_left, c_right = st.columns(2, gap="large")
+    with c_left:
+        plot_horizontal_bars("failure_reasons", "Gründe für Misserfolg (nach Ansprechpartner)")
+    with c_right:
+        plot_horizontal_bars("objections", "Vor- und Einwände (nach Ansprechpartner)")
 
 # ==============================================================================
-# TAB 1: ERHEBUNG
+# LAYER 1: ERHEBUNG
 # ==============================================================================
-with tab1:
+if st.session_state.active_layer == "Erhebung":
     if not alle_ansaetze:
-        st.info("Bitte erstelle zuerst einen Ansatz im Reiter **Ansatz erstellen**.")
+        st.info("Bitte erstelle zuerst einen Ansatz im Bereich **Ansatz erstellen**.")
     else:
         col_form, col_metrics = st.columns([2.15, 1.15], gap="large")
 
         with col_form:
-            st.markdown('<div class="sculpt-panel">', unsafe_allow_html=True)
+            with st.container(border=True):
+                ansatz_namen = [a["name"] for a in alle_ansaetze]
+                def_idx = ansatz_namen.index(st.session_state.last_ansatz) if st.session_state.last_ansatz in ansatz_namen else 0
 
-            ansatz_namen = [a["name"] for a in alle_ansaetze]
-            def_idx = ansatz_namen.index(st.session_state.last_ansatz) if st.session_state.last_ansatz in ansatz_namen else 0
+                sel_ansatz = st.selectbox("Ansatz", ansatz_namen, index=def_idx)
+                st.session_state.last_ansatz = sel_ansatz
+                sel_app_obj = next(a for a in alle_ansaetze if a["name"] == sel_ansatz)
+                sel_app_id = sel_app_obj["id"]
 
-            sel_ansatz = st.selectbox("Ansatz", ansatz_namen, index=def_idx)
-            st.session_state.last_ansatz = sel_ansatz
-            sel_app_obj = next(a for a in alle_ansaetze if a["name"] == sel_ansatz)
-            sel_app_id = sel_app_obj["id"]
+                contact = st.radio("Ansprechpartner", ["Geschäftsführer", "Führungskraft", "Empfang"], horizontal=True)
+                outcome = st.radio("Ergebnis", ["Erfolg", "Plan B", "Misserfolg"], horizontal=True)
 
-            contact = st.radio("Ansprechpartner", ["Geschäftsführer", "Führungskraft", "Empfang"], horizontal=True)
-            outcome = st.radio("Ergebnis", ["Erfolg", "Plan B", "Misserfolg"], horizontal=True)
+                reasons = []
+                if outcome == "Misserfolg":
+                    with st.expander("Gründe für Misserfolg auswählen", expanded=True):
+                        reasons = st.multiselect("Warum ist es gescheitert?", REASONS_LIST)
 
-            reasons = []
-            if outcome == "Misserfolg":
-                with st.expander("Gründe für Misserfolg auswählen", expanded=True):
-                    reasons = st.multiselect("Warum ist es gescheitert?", REASONS_LIST)
+                with st.expander("Vor- und Einwände"):
+                    objections = st.multiselect("Aufgetretene Vor- und Einwände:", OBJECTIONS_LIST)
+                    custom_obj = st.text_input("Weitere Vor- oder Einwände hinzufügen (kommagetrennt):", placeholder="z. B. Interner Projektstopp, Urlaubszeit...")
 
-            with st.expander("Vor- und Einwände"):
-                objections = st.multiselect("Aufgetretene Vor- und Einwände:", OBJECTIONS_LIST)
-                custom_obj = st.text_input("Weitere Vor- oder Einwände hinzufügen (kommagetrennt):", placeholder="z. B. Interner Projektstopp, Urlaubszeit...")
+                perf = st.radio("Eigene Performance (1 – 5)", [1, 2, 3, 4, 5], index=2, horizontal=True)
 
-            perf = st.radio("Eigene Performance (1 – 5)", [1, 2, 3, 4, 5], index=2, horizontal=True)
-
-            st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-            if st.button("💾 Speichern", use_container_width=True):
-                final_obj = list(objections)
-                if custom_obj.strip():
-                    final_obj.extend([o.strip() for o in custom_obj.split(",") if o.strip()])
-                speichere_interaktion(sel_app_id, contact, outcome, reasons, final_obj, perf)
-                st.success("Interaktion gespeichert!")
-                time.sleep(0.5)
-                st.rerun()
-
-            st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown("<div style='height:0.45rem'></div>", unsafe_allow_html=True)
+                if st.button("💾 Speichern", use_container_width=True, type="primary"):
+                    final_obj = list(objections)
+                    if custom_obj.strip():
+                        final_obj.extend([o.strip() for o in custom_obj.split(",") if o.strip()])
+                    speichere_interaktion(sel_app_id, contact, outcome, reasons, final_obj, perf)
+                    st.success("Interaktion gespeichert!")
+                    time.sleep(0.45)
+                    st.rerun()
 
         with col_metrics:
             ansatz_interactions = [i for i in alle_interaktionen if i["approach_id"] == sel_app_id]
@@ -523,139 +718,42 @@ with tab1:
             """, unsafe_allow_html=True)
 
 # ==============================================================================
-# TAB 2: ANSATZ ERSTELLEN
+# LAYER 2: ANSATZ ERSTELLEN
 # ==============================================================================
-with tab2:
-    st.markdown('<div class="sculpt-panel">', unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    new_name = c1.text_input("Ansatz benennen", placeholder="z. B. Direktansprache Produktivität...")
-    new_cat = c2.selectbox(
-        "Farbe / Kategorie zuweisen",
-        ["Eis", "Wald", "Feuer", "Luft"],
-        format_func=lambda x: f"{CATEGORIES[x]} ({x})",
-    )
+elif st.session_state.active_layer == "Ansatz erstellen":
+    with st.container(border=True):
+        c1, c2 = st.columns(2)
+        new_name = c1.text_input("Ansatz benennen", placeholder="z. B. Direktansprache Produktivität...")
+        new_cat = c2.selectbox(
+            "Farbe / Kategorie zuweisen",
+            ["Eis", "Wald", "Feuer", "Luft"],
+            format_func=lambda x: f"{CATEGORIES[x]} ({x})",
+        )
 
-    new_guide = st.file_uploader("Leitfaden hochladen (PDF, DOCX, TXT)", type=["pdf", "docx", "txt"])
-    preview_text = extrahiere_leitfaden(new_guide) if new_guide else ""
-    if preview_text:
-        with st.expander("📄 Hochgeladenen Leitfaden einsehen", expanded=True):
-            st.text_area("Inhalt des Leitfadens", value=preview_text, height=200, disabled=True)
+        # Leitfaden wird hier nur hochgeladen (ohne Vorschau darunter in der Erstellungsmaske)
+        new_guide = st.file_uploader("Leitfaden hochladen (PDF, DOCX, TXT)", type=["pdf", "docx", "txt"])
 
-    g1 = st.text_input("Ziel", placeholder="Hauptziel dieses Ansatzes...")
-    g2 = st.text_input("Zweitziel", placeholder="Sekundäres Ziel...")
-    g3 = st.text_input("Ausweichziel", placeholder="Plan B / Fallback-Ziel...")
+        g1 = st.text_input("Ziel", placeholder="Hauptziel dieses Ansatzes...")
+        g2 = st.text_input("Zweitziel", placeholder="Sekundäres Ziel...")
+        g3 = st.text_input("Ausweichziel", placeholder="Plan B / Fallback-Ziel...")
 
-    if st.button("💾 Ansatz speichern", use_container_width=True):
-        if not new_name.strip():
-            st.warning("Bitte gib dem Ansatz einen Namen.")
-        else:
-            if speichere_ansatz(new_name, preview_text, g1, g2, g3, new_cat):
-                st.success(f"Ansatz **{new_name.strip()}** wurde angelegt!")
-                time.sleep(0.5)
-                st.rerun()
+        st.markdown("<div style='height:0.45rem'></div>", unsafe_allow_html=True)
+        if st.button("💾 Ansatz speichern", use_container_width=True, type="primary"):
+            if not new_name.strip():
+                st.warning("Bitte gib dem Ansatz einen Namen.")
             else:
-                st.warning("Ein Ansatz mit diesem Namen existiert bereits.")
-    st.markdown('</div>', unsafe_allow_html=True)
+                guide_text = extrahiere_leitfaden(new_guide) if new_guide else ""
+                if speichere_ansatz(new_name, guide_text, g1, g2, g3, new_cat):
+                    st.success(f"Ansatz **{new_name.strip()}** wurde angelegt!")
+                    time.sleep(0.45)
+                    st.rerun()
+                else:
+                    st.warning("Ein Ansatz mit diesem Namen existiert bereits.")
 
 # ==============================================================================
-# STATISTIK-AUFBEREITUNG (KURS- & BALKEN-DIAGRAMME)
+# LAYER 3: ANSATZÜBERSICHT
 # ==============================================================================
-def render_stats(interactions_list, title_prefix=""):
-    if not interactions_list:
-        st.info("Für diese Auswahl wurden noch keine Interaktionen erfasst.")
-        return
-
-    df = pd.DataFrame(interactions_list).sort_values("created_at")
-    df["Anwendungsfall"] = range(1, len(df) + 1)
-    df["Kum_Erfolge"] = df["outcome"].apply(lambda x: 1 if x == "Erfolg" else 0).cumsum()
-    df["Kum_Misserfolge"] = df["outcome"].apply(lambda x: 1 if x == "Misserfolg" else 0).cumsum()
-
-    fig_line = go.Figure()
-    fig_line.add_trace(go.Scatter(
-        x=df["Anwendungsfall"],
-        y=df["Kum_Erfolge"],
-        mode="lines+markers",
-        name="Erfolge",
-        line=dict(color="#38BDF8", width=3.5),
-        marker=dict(size=8),
-    ))
-    fig_line.add_trace(go.Scatter(
-        x=df["Anwendungsfall"],
-        y=df["Kum_Misserfolge"],
-        mode="lines+markers",
-        name="Misserfolge",
-        line=dict(color="#F87171", width=3.5),
-        marker=dict(size=8),
-    ))
-    fig_line.update_layout(
-        title=f"{title_prefix}Verlaufskurve (Erfolge & Misserfolge)",
-        template="plotly_dark",
-        plot_bgcolor="rgba(10,15,26,0.65)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis_title="Anwendungsfälle (Anzahl)",
-        yaxis_title="Erfolge / Misserfolge",
-        xaxis=dict(dtick=1),
-        yaxis=dict(dtick=1),
-        hovermode="x unified",
-    )
-    st.plotly_chart(fig_line, use_container_width=True)
-
-    def plot_grouped_bars(col_name, chart_title):
-        records = []
-        for _, row in df.iterrows():
-            items = row[col_name]
-            if isinstance(items, str):
-                try:
-                    items = json.loads(items)
-                except Exception:
-                    items = []
-            if not isinstance(items, list):
-                items = []
-            for item in items:
-                records.append({"Ansprechpartner": row["contact_type"], "Kriterium": item})
-
-        if not records:
-            st.caption(f"Noch keine Einträge für: {chart_title}")
-            return
-
-        df_exp = pd.DataFrame(records)
-        df_grp = df_exp.groupby(["Kriterium", "Ansprechpartner"]).size().reset_index(name="Häufigkeit")
-
-        fig = px.bar(
-            df_grp,
-            x="Kriterium",
-            y="Häufigkeit",
-            color="Ansprechpartner",
-            barmode="group",
-            text="Häufigkeit",
-            color_discrete_map={
-                "Geschäftsführer": "#38BDF8",
-                "Führungskraft": "#4ADE80",
-                "Empfang": "#FACC15",
-            },
-        )
-        fig.update_traces(textposition="outside")
-        fig.update_layout(
-            title=chart_title,
-            template="plotly_dark",
-            plot_bgcolor="rgba(10,15,26,0.65)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            xaxis_title="",
-            yaxis_title="Häufigkeit",
-            yaxis=dict(dtick=1),
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    c_left, c_right = st.columns(2)
-    with c_left:
-        plot_grouped_bars("failure_reasons", "Gründe für Misserfolg (nach Ansprechpartner)")
-    with c_right:
-        plot_grouped_bars("objections", "Vor- und Einwände (nach Ansprechpartner)")
-
-# ==============================================================================
-# TAB 3: ANSATZÜBERSICHT
-# ==============================================================================
-with tab3:
+elif st.session_state.active_layer == "Ansatzübersicht":
     if not alle_ansaetze:
         st.info("Noch keine Ansätze vorhanden.")
     else:
@@ -675,32 +773,63 @@ with tab3:
 
                     st.markdown(f"""
                     <div class="cat-card cat-{cat}">
-                        <div class="cat-title">{a['name']}</div>
+                        <div class="cat-title">{html.escape(a['name'])}</div>
                         <div class="cat-rate">{sr}%</div>
                     </div>
                     """, unsafe_allow_html=True)
-                    if st.button("Statistik öffnen", key=f"btn_anl_{a['id']}", use_container_width=True):
-                        st.session_state.view_approach_id = a["id"]
-                    st.markdown("<div style='height:0.45rem'></div>", unsafe_allow_html=True)
+
+                    b_stat, b_guide = st.columns(2, gap="small")
+                    with b_stat:
+                        if st.button("📊 Statistik", key=f"btn_st_{a['id']}", use_container_width=True):
+                            st.session_state.view_approach_id = a["id"]
+                            st.session_state.view_submode = "stats"
+                    with b_guide:
+                        if st.button("📄 Leitfaden", key=f"btn_gd_{a['id']}", use_container_width=True):
+                            st.session_state.view_approach_id = a["id"]
+                            st.session_state.view_submode = "guide"
+
+                    st.markdown("<div style='height:0.55rem'></div>", unsafe_allow_html=True)
 
         if st.session_state.view_approach_id:
             sel_a = next((a for a in alle_ansaetze if a["id"] == st.session_state.view_approach_id), None)
             if sel_a:
                 st.markdown("---")
-                st.markdown(f"### 📊 Statistik & Details: {sel_a['name']} ({sel_a['category']})")
+                h_col1, h_col2, h_col3 = st.columns([3.2, 1.1, 1.1])
+                with h_col1:
+                    st.markdown(f"### {sel_a['name']} ({sel_a['category']})")
+                with h_col2:
+                    if st.button(
+                        "📊 Statistik",
+                        key="switch_to_stats",
+                        type="primary" if st.session_state.view_submode == "stats" else "secondary",
+                        use_container_width=True,
+                    ):
+                        st.session_state.view_submode = "stats"
+                        st.rerun()
+                with h_col3:
+                    if st.button(
+                        "📄 Leitfaden",
+                        key="switch_to_guide",
+                        type="primary" if st.session_state.view_submode == "guide" else "secondary",
+                        use_container_width=True,
+                    ):
+                        st.session_state.view_submode = "guide"
+                        st.rerun()
 
-                with st.expander("📄 Leitfaden & definierte Ziele einsehen", expanded=False):
-                    g_col1, g_col2, g_col3 = st.columns(3)
-                    g_col1.markdown(f"**Ziel:** {sel_a.get('goal_1') or '–'}")
-                    g_col2.markdown(f"**Zweitziel:** {sel_a.get('goal_2') or '–'}")
-                    g_col3.markdown(f"**Ausweichziel:** {sel_a.get('goal_3') or '–'}")
-                    if sel_a.get("guide_text"):
-                        st.text_area("Hinterlegter Leitfaden", value=sel_a["guide_text"], height=180, disabled=True)
-                    else:
-                        st.caption("Für diesen Ansatz wurde kein Leitfaden hochgeladen.")
-
-                a_data = [i for i in alle_interaktionen if i["approach_id"] == sel_a["id"]]
-                render_stats(a_data, title_prefix=f"{sel_a['name']} – ")
+                if st.session_state.view_submode == "guide":
+                    with st.container(border=True):
+                        g_col1, g_col2, g_col3 = st.columns(3)
+                        g_col1.markdown(f"**Ziel:** {sel_a.get('goal_1') or '–'}")
+                        g_col2.markdown(f"**Zweitziel:** {sel_a.get('goal_2') or '–'}")
+                        g_col3.markdown(f"**Ausweichziel:** {sel_a.get('goal_3') or '–'}")
+                        st.markdown("---")
+                        if sel_a.get("guide_text"):
+                            st.markdown(sel_a["guide_text"].replace("\n", "  \n"))
+                        else:
+                            st.info("Für diesen Ansatz wurde kein Leitfaden hochgeladen.")
+                else:
+                    a_data = [i for i in alle_interaktionen if i["approach_id"] == sel_a["id"]]
+                    render_stats(a_data, title_prefix=f"{sel_a['name']} – ")
 
                 with st.expander("Gefahrenzone: Ansatz löschen"):
                     if st.button(f"Ansatz '{sel_a['name']}' endgültig löschen", key=f"del_app_{sel_a['id']}"):
@@ -709,8 +838,7 @@ with tab3:
                         st.rerun()
 
 # ==============================================================================
-# TAB 4: GESAMTSTATISTIK
+# LAYER 4: GESAMTSTATISTIK
 # ==============================================================================
-with tab4:
-    st.markdown("### 🌍 Gesamtstatistik (Alle Ansätze kumuliert)")
-    render_stats(alle_interaktionen, title_prefix="Gesamt – ")
+elif st.session_state.active_layer == "Gesamtstatistik":
+    render_stats(alle_interaktionen, title_prefix="Gesamtstatistik – ")
